@@ -1,0 +1,9 @@
+streamlit
+openai
+dotenv
+elasticsearch
+psycopg2-binary
+python-dotenv
+numpy==1.26.4
+torch
+sentence_transformers==2.7.0

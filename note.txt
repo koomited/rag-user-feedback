@@ -1,0 +1,5 @@
+pip install pgcli
+# connect
+pgcli -h localhost -U course_user -d course_assistant -W
+#torch
+sentence_transformers==2.7.0
