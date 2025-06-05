@@ -28,11 +28,15 @@ def download_documents() -> list:
 # Create Elasticsearch client
 def create_elasticsearch_client() -> Elasticsearch:
     print("[INFO] Connecting to Elasticsearch...")
-    es = Elasticsearch(hosts=["http://localhost:9201"])
+    
+    es = Elasticsearch(
+        "http://elasticsearch:9200",
+    )
     return es
 
 # Define index settings and create index
 def setup_index(es_client: Elasticsearch, index_name: str):
+    print(index_name)
     print(f"[INFO] Deleting existing index '{index_name}' (if any)...")
     es_client.indices.delete(index=index_name, ignore_unavailable=True)
 
