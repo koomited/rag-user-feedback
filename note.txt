@@ -3,3 +3,9 @@ pip install pgcli
 pgcli -h localhost -U course_user -d course_assistant -W
 #torch
 sentence_transformers==2.7.0
+
+If the disk is full elasticsearch mak the document as read only. This block in formation retreival.
+Liberate space  and run
+curl -X PUT "http://localhost:9200/_all/_settings" \
+  -H 'Content-Type: application/json' \
+  -d '{"index.blocks.read_only_allow_delete": null}'

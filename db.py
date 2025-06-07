@@ -34,7 +34,11 @@ def init_db():
                     course VARCHAR(100) NOT NULL,
                     model_used VARCHAR(100),
                     response_time FLOAT,
-                    relevance_score FLOAT,
+                    relevance VARCHAR(20),
+                    relevance_explanation TEXT,
+                    prompt_tokens INTEGER,
+                    completion_tokens INTEGER,
+                    gemini_cost FLOAT,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
@@ -55,7 +59,9 @@ def init_db():
     finally:
         conn.close()
 
-def save_conversation(question, answer, course, model_used=None, response_time=None):
+def save_conversation(question, answer, course, model_used=None, response_time=None, 
+                     relevance=None, relevance_explanation=None, prompt_tokens=None, 
+                     completion_tokens=None, gemini_cost=None):
     """Save a conversation to the database"""
     conn = get_db_connection()
     try:
@@ -63,10 +69,12 @@ def save_conversation(question, answer, course, model_used=None, response_time=N
             conversation_id = str(uuid.uuid4())
             cur.execute("""
                 INSERT INTO conversations 
-                (id, question, answer, course, model_used, response_time)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                (id, question, answer, course, model_used, response_time, 
+                 relevance, relevance_explanation, prompt_tokens, completion_tokens, gemini_cost)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
-            """, (conversation_id, question, answer, course, model_used, response_time))
+            """, (conversation_id, question, answer, course, model_used, response_time,
+                  relevance, relevance_explanation, prompt_tokens, completion_tokens, gemini_cost))
             
             result = cur.fetchone()
             conn.commit()
@@ -103,7 +111,7 @@ def get_feedback_stats():
     """Get feedback statistics"""
     conn = get_db_connection()
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("""
                 SELECT 
                     COUNT(*) as total_feedback,
@@ -112,5 +120,28 @@ def get_feedback_stats():
                 FROM feedback
             """)
             return cur.fetchone()
+    finally:
+        conn.close()
+
+def get_last_conversations(limit=5, relevance_filter=None):
+    """Get the last N conversations, optionally filtered by relevance"""
+    conn = get_db_connection()
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            query = """
+                SELECT id, question, answer, course, model_used, response_time,
+                       relevance, relevance_explanation, prompt_tokens,
+                       completion_tokens, gemini_cost, timestamp
+                FROM conversations
+            """
+            params = []
+            if relevance_filter:
+                query += " WHERE relevance = %s"
+                params.append(relevance_filter)
+            query += " ORDER BY timestamp DESC LIMIT %s"
+            params.append(limit)
+            
+            cur.execute(query, params)
+            return cur.fetchall()
     finally:
         conn.close()

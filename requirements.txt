@@ -1,9 +1,13 @@
-streamlit
 openai
+streamlit
 dotenv
 elasticsearch<9,>=8.0.0
 psycopg2-binary
 python-dotenv
 numpy==1.26.4
-torch
 sentence_transformers==2.7.0
+google-genai
+tqdm
+--find-links https://download.pytorch.org/whl/cpu/torch_stable.html
+torch==2.3.1+cpu
+

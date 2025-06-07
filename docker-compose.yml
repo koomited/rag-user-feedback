@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-
   elasticsearch:
     container_name: elasticsearch
     image: docker.elastic.co/elasticsearch/elasticsearch:8.4.3
@@ -53,6 +52,12 @@ services:
       - POSTGRES_DB=course_assistant
       - POSTGRES_USER=course_user
       - POSTGRES_PASSWORD=course_password
+      - POSTGRES_PORT=5432
+      - OPENAI_BASE_URL=http://ollama:11434/v1
+      - OPENAI_API_KEY=ollama
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - INDEX_NAME=course-questions
+      - LLM_MODEL=phi3
     depends_on:
       - elasticsearch
       - postgres
@@ -62,12 +67,29 @@ services:
     volumes:
       - .:/app
 
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - course_network
+    depends_on:
+      - postgres
+
 volumes:
   elasticsearch_data:
     driver: local
   postgres_data:
     driver: local
   ollama_data:
+    driver: local
+  grafana_data:
     driver: local
 
 networks:
