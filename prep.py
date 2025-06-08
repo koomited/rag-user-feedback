@@ -42,44 +42,42 @@ def create_elasticsearch_client() -> Elasticsearch:
 
 # Define index settings and create index
 def setup_index(es_client: Elasticsearch, index_name: str= "course-questions"):
-    print("[INFO] Setting up Elasticsearch index...")    
-    # Check if index exists
-    if es_client.indices.exists(index=index_name):
-        print(f"[INFO] Index '{index_name}' already exists. Skipping creation.")
-    else:
-        print(f"[INFO] Creating index '{index_name}'...")
-        index_settings = {
-            "settings": {
-                "number_of_shards": 1,
-                "number_of_replicas": 0
-            },
-            "mappings": {
-                "properties": {
-                    "text": {"type": "text"},
-                    "section": {"type": "text"},
-                    "question": {"type": "text"},
-                    "course": {"type": "keyword"},
-                    "question_text_vector": {
-                        "type": "dense_vector",
-                        "dims": 384,
-                        "index": True,
-                        "similarity": "cosine"
-                    },
-                }
+    # print("[INFO] Setting up Elasticsearch index...")    
+    # # Check if index exists
+    # if es_client.indices.exists(index=index_name):
+    #     print(f"[INFO] Index '{index_name}' already exists. Skipping creation.")
+    # else:
+    print(f"[INFO] Creating index '{index_name}'...")
+    index_settings = {
+        "settings": {
+            "number_of_shards": 1,
+            "number_of_replicas": 0
+        },
+        "mappings": {
+            "properties": {
+                "text": {"type": "text"},
+                "section": {"type": "text"},
+                "question": {"type": "text"},
+                "course": {"type": "keyword"},
+                "question_text_vector": {
+                    "type": "dense_vector",
+                    "dims": 384,
+                    "index": True,
+                    "similarity": "cosine"
+                },
             }
         }
+    }
+    es_client.indices.delete(index=index_name, ignore_unavailable=True)
 
-        es_client.indices.create(index=index_name, body=index_settings, request_timeout=90)
-        print("[INFO] Index created successfully.")
+    es_client.indices.create(index=index_name, body=index_settings, request_timeout=90)
+    print("[INFO] Index created successfully.")
 
 
 from tqdm import tqdm
 
 def index_documents(es_client: Elasticsearch, model: SentenceTransformer, documents: list, index_name: str):
     # Check if index exists first
-    if  es_client.indices.exists(index=index_name):
-        print(f"[WARNING] Index '{index_name}'  exist. Skipping indexing.")
-        return
     
     print("[INFO] Indexing documents...")
     for doc in tqdm(documents):

@@ -4,6 +4,11 @@ import os
 from dotenv import load_dotenv
 from rag import rag
 from db import save_conversation, save_feedback, get_last_conversations, get_feedback_stats
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -95,12 +100,14 @@ if st.button("🔍 Ask", type="primary"):
         with st.spinner("🤔 Thinking..."):
             start_time = time.time()
             try:
+                logger.info(f"Calling rag with query: {user_input}, course: {selected_course}, model: {st.session_state.model_provider}, search_type: {st.session_state.search_type}")
                 result = rag(
                     query=user_input, 
                     course=selected_course,
                     model_provider=st.session_state.model_provider,
                     search_type=st.session_state.search_type
                 )
+                logger.info("RAG function returned successfully")
                 
                 conversation_id = save_conversation(
                     question=user_input,
@@ -114,6 +121,7 @@ if st.button("🔍 Ask", type="primary"):
                     completion_tokens=result["completion_tokens"],
                     gemini_cost=result["gemini_cost"]
                 )
+                logger.info(f"Conversation saved with ID: {conversation_id}")
                 
                 st.session_state.conversation_id = conversation_id
                 st.session_state.current_answer = result["answer"]
@@ -123,6 +131,7 @@ if st.button("🔍 Ask", type="primary"):
                 st.session_state.relevance_explanation = result["relevance_explanation"]
                 
             except Exception as e:
+                logger.error(f"RAG call failed: {e}")
                 st.error(f"❌ Error: {str(e)}")
                 st.session_state.conversation_id = None
                 result = None
@@ -174,30 +183,34 @@ if hasattr(st.session_state, 'current_answer') and st.session_state.current_answ
 # Last 5 conversations
 st.markdown("---")
 st.markdown("### 📜 Recent Conversations")
-relevance_filter = st.selectbox(
+st.selectbox(
     "Filter by relevance:",
     options=[None, "RELEVANT", "PARTIALLY_RELEVANT", "NON_RELEVANT", "UNKNOWN"],
     format_func=lambda x: "All" if x is None else x,
     key="relevance_filter"
 )
-st.session_state.relevance_filter = relevance_filter
 
-conversations = get_last_conversations(limit=5, relevance_filter=relevance_filter)
-if conversations:
-    for conv in conversations:
-        with st.expander(f"Q: {conv['question'][:50]}{'...' if len(conv['question']) > 50 else ''} ({conv['timestamp']})"):
-            st.markdown(f"**Course:** {conv['course']}")
-            st.markdown(f"**Model:** {conv['model_used']}")
-            st.markdown(f"**Response Time:** {conv['response_time']:.2f}s")
-            st.markdown(f"**Relevance:** {conv['relevance']}")
-            st.markdown(f"**Relevance Explanation:** {conv['relevance_explanation']}")
-            st.markdown(f"**Prompt Tokens:** {conv['prompt_tokens']}")
-            st.markdown(f"**Completion Tokens:** {conv['completion_tokens']}")
-            st.markdown(f"**Gemini Cost:** ${conv['gemini_cost']:.4f}" if conv['gemini_cost'] else "**Gemini Cost:** N/A")
-            st.markdown(f"**Question:** {conv['question']}")
-            st.markdown(f"**Answer:** {conv['answer'][:200]}{'...' if len(conv['answer']) > 200 else ''}")
-else:
-    st.write("No conversations found.")
+try:
+    conversations = get_last_conversations(limit=5, relevance_filter=st.session_state.relevance_filter)
+    logger.info(f"Retrieved {len(conversations)} recent conversations")
+    if conversations:
+        for conv in conversations:
+            with st.expander(f"Q: {conv['question'][:50]}{'...' if len(conv['question']) > 50 else ''} ({conv['timestamp']})"):
+                st.markdown(f"**Course:** {conv['course']}")
+                st.markdown(f"**Model:** {conv['model_used']}")
+                st.markdown(f"**Response Time:** {conv['response_time']:.2f}s")
+                st.markdown(f"**Relevance:** {conv['relevance']}")
+                st.markdown(f"**Relevance Explanation:** {conv['relevance_explanation']}")
+                st.markdown(f"**Prompt Tokens:** {conv['prompt_tokens']}")
+                st.markdown(f"**Completion Tokens:** {conv['completion_tokens']}")
+                st.markdown(f"**Gemini Cost:** ${conv['gemini_cost']:.4f}" if conv['gemini_cost'] else "**Gemini Cost:** N/A")
+                st.markdown(f"**Question:** {conv['question']}")
+                st.markdown(f"**Answer:** {conv['answer'][:200]}{'...' if len(conv['answer']) > 200 else ''}")
+    else:
+        st.write("No conversations found.")
+except Exception as e:
+    logger.error(f"Failed to retrieve conversations: {e}")
+    st.error(f"❌ Error retrieving conversations: {str(e)}")
 
 # Sidebar
 with st.sidebar:
