@@ -42,7 +42,7 @@ docker compose up -d
 ```
 And finally open the streamlit application:
 It's accessible at [localhost:8501](http://localhost:8501)
-```
+
 
 ## Code
 
