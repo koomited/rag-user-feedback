@@ -30,6 +30,8 @@ CMD bash -c "\
   done; \
   echo 'Elasticsearch is up. Running prep.py...'; \
   python prep.py; \
+  echo 'Generating synthetic historical data...'; \
+  python generate_data.py --historical; \
   echo 'Starting Streamlit app...'; \
   streamlit run app.py \
     --server.port=8501 \

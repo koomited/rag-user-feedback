@@ -8,6 +8,7 @@ numpy==1.26.4
 sentence_transformers==2.7.0
 google-genai
 tqdm
+faker
 --find-links https://download.pytorch.org/whl/cpu/torch_stable.html
 torch==2.3.1+cpu
 
